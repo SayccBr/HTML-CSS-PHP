@@ -1,0 +1,9 @@
+// php21.php
+<?php
+include 'biblioteca.inc.php';
+
+// Exemplo de chamadas das funções
+echo verificarParOuImpar(5);
+echo maiorNumero(10, 5);
+echo calcularImpostoDeRenda(3000);
+?>
