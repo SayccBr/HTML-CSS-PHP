@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro</title>
+    <link rel="stylesheet" href="styles/css.css">
+</head>
+
+<body>
+    <form id="cadastro">
+        <label>Nome: <input type="text" id="nick" name="nick"></label><br>
+        <label>Senha: <input type="password" id="senha" name="senha"></label><br>
+        <button type="submit" id="btnCadastrar">Cadastrar</button>
+        <p id="msg"></p>
+    </form>
+
+    
+    <script>
+        const form = document.getElementById('cadastro');
+        const inputsTexto = form.querySelectorAll('input[type="text"], input[type="password"]');
+        const msg = document.getElementById('msg');
+        const btnCadastrar = document.getElementById('btnCadastrar');
+
+        function checarSenhaNick() {
+            const nick = form.querySelector('input[name="nick"]').value.trim();
+            const senha = form.querySelector('input[name="senha"]').value.trim();
+
+            if (senha === '' || nick === '') {
+                msg.textContent = '';
+                btnCadastrar.style.display = 'inline';
+                btnCadastrar.textContent = 'Cadastrar';
+                // Desabilita o botão se nick ou senha estiverem vazios
+                btnCadastrar.disabled = true;
+                return;
+            } else {
+                btnCadastrar.disabled = false;
+            }
+
+            fetch('verificar_senha.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'senha=' + encodeURIComponent(senha) + '&nick=' + encodeURIComponent(nick)
+            })
+                .then(res => res.text())
+                .then(data => {
+                    const resposta = data.trim();
+
+                    if (resposta === '') {
+                        msg.textContent = '';
+                        btnCadastrar.style.display = 'inline';
+                        btnCadastrar.textContent = 'Cadastrar';
+                        btnCadastrar.disabled = false;
+
+                    } else if (resposta.startsWith('Senha já existe e é do usuário:')) {
+                        const dono = resposta.replace('Senha já existe e é do usuário:', '').trim();
+
+                        if (dono.toLowerCase() === nick.toLowerCase()) {
+                            msg.textContent = `Essa senha pertence ao usuário: ${dono}`;
+                            msg.className = 'msg-aviso';
+                            btnCadastrar.style.display = 'inline';
+                            btnCadastrar.textContent = 'Login';
+                            btnCadastrar.disabled = false;
+                        } else {
+                            msg.textContent = resposta;
+                            msg.className = 'msg-erro';
+                            btnCadastrar.style.display = 'none';
+                            btnCadastrar.disabled = true;
+                            
+
+                            // Busca e exibe a tabela de senhas
+                            fetch('lista_senhas.php')
+                                .then(res => res.text())
+                                .then(tabela => {
+                                    msg.innerHTML += '<br><br>' + tabela;
+                                });
+                        }
+                    } else {
+                        msg.textContent = resposta;
+                        btnCadastrar.style.display = 'none';
+                        btnCadastrar.disabled = true;
+                        
+                    }
+                });
+        }
+
+        // Liga o evento input em todos os inputs texto (nick e senha)
+        inputsTexto.forEach(input => {
+            input.addEventListener('input', checarSenhaNick);
+        });
+
+        // Listener do submit continua o mesmo, validando e enviando o cadastro
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const nick = form.querySelector('input[name="nick"]').value.trim();
+            const senha = form.querySelector('input[name="senha"]').value.trim();
+
+            if (nick === '' || senha === '') {
+                msg.textContent = 'Preencha o nick e a senha!';
+                msg.className = 'msg-erro';
+                return;
+            }
+
+            fetch('cadastrar.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'nick=' + encodeURIComponent(nick) + '&senha=' + encodeURIComponent(senha)
+            })
+                .then(res => res.text())
+                .then(data => {
+                    msg.textContent = data;
+                    msg.className = 'msg-sucesso';
+                });
+        });
+
+
+
+    </script>
+</body>
+
+</html>
